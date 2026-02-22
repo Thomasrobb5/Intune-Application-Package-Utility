@@ -1,0 +1,46 @@
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+# If at some point Apache Maven is included in the project
+maven_tool/
+maven_debug.log
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+.factorypath
+
+# Compiled Java
+*.class
+
+# Windows / OS
+Thumbs.db
+Desktop.ini
+
+# Project Specific
+*.intunewin
+*.msi
+test_msi.ps1
+*members.txt
+icon.png
+intune.ico
+build-exe.ps1
+# Assuming build-exe.ps1 is part of the repo if it's a tool, but often scripts are included.
+# Actually, the user might want build-exe.ps1 in the repo. I'll leave it in for now unless it looks like a local-only thing.
+# But test.msi and members.txt should probably be out.
+
+# Executables and build output
+*.exe
+*.zip
+*.msi

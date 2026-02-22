@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.geometry.Pos?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.control.ProgressBar?>
+
+<BorderPane stylesheets="@style.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.antigravity.intunepackager.DashboardController">
+
+    <!-- Top App Bar -->
+    <top>
+        <HBox alignment="CENTER_LEFT" styleClass="app-header">
+            <Label text="Intune Application Packager" styleClass="app-title"/>
+        </HBox>
+    </top>
+
+    <!-- Sidebar Navigation -->
+    <left>
+        <VBox spacing="10" styleClass="sidebar" prefWidth="240">
+            <HBox fx:id="step1Indicator" styleClass="step-indicator, step-indicator-active" alignment="CENTER_LEFT">
+                <Label text="1. Select Application" />
+            </HBox>
+            <HBox fx:id="step2Indicator" styleClass="step-indicator, step-indicator-inactive" alignment="CENTER_LEFT">
+                <Label text="2. Details &amp; Detection" />
+            </HBox>
+            <HBox fx:id="step3Indicator" styleClass="step-indicator, step-indicator-inactive" alignment="CENTER_LEFT">
+                <Label text="3. Package &amp; Output" />
+            </HBox>
+            <HBox fx:id="step4Indicator" styleClass="step-indicator, step-indicator-inactive" alignment="CENTER_LEFT">
+                <Label text="4. Upload &amp; Finish" />
+            </HBox>
+
+            <Region VBox.vgrow="ALWAYS" />
+            
+            <VBox spacing="2">
+                <Label text="Created by Thomas Robb" styleClass="creator-branding" />
+                <Label text="Solutions Engineer" styleClass="creator-branding" style="-fx-padding: 0 5 10 5;"/>
+            </VBox>
+
+            <Button text="⚙  Settings" onAction="#handleOpenSettings" styleClass="sidebar-button" maxWidth="Infinity">
+                <VBox.margin><Insets bottom="10" /></VBox.margin>
+            </Button>
+        </VBox>
+    </left>
+
+    <!-- Main Content Area (Wizard Pages) -->
+    <center>
+        <StackPane fx:id="contentStack" styleClass="content-area">
+
+            <!-- ================= STEP 1: Select Application ================= -->
+            <VBox fx:id="step1Box" spacing="20" visible="true">
+                <Label text="Select Application" styleClass="step-title"/>
+                <Label text="Choose the MSI or EXE installer file you want to package." styleClass="step-description"/>
+                
+                <VBox styleClass="card" spacing="15" VBox.vgrow="ALWAYS" alignment="CENTER">
+                    <VBox styleClass="dropzone" onMouseClicked="#handleBrowseSource" alignment="CENTER" prefHeight="120" VBox.vgrow="ALWAYS">
+                        <Label text="📁" styleClass="dropzone-icon" />
+                        <Label text="Click to browse" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #323130;"/>
+                        <Label text="Supports .msi and .exe files" styleClass="step-description"/>
+                    </VBox>
+                    <Label fx:id="selectedFileLabel" text="No file selected yet" style="-fx-font-weight: bold; -fx-text-fill: #605e5c; -fx-font-size: 14px;"/>
+                </VBox>
+            </VBox>
+
+            <!-- ================= STEP 2: Details & Detection ================= -->
+            <VBox fx:id="step2Box" spacing="20" visible="false">
+                <Label text="Details &amp; Detection Rules" styleClass="step-title"/>
+                <Label text="Provide application metadata and define how Intune will detect the installation." styleClass="step-description"/>
+                
+                <GridPane styleClass="card" hgap="15" vgap="15">
+                    <!-- Column Constraints for Labels (120px) and Fields (Grow) -->
+                    
+                    <Label text="App Name:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                    <TextField fx:id="appNameField" promptText="e.g. Google Chrome" GridPane.columnIndex="1" GridPane.rowIndex="0" prefWidth="350"/>
+                    
+                    <Label text="Publisher:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                    <TextField fx:id="publisherField" promptText="e.g. Google" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                    
+                    <Label text="Version:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                    <TextField fx:id="versionField" promptText="1.0.0" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+
+                    <Label text="Description:" GridPane.columnIndex="0" GridPane.rowIndex="3" GridPane.valignment="TOP">
+                        <padding><Insets top="5"/></padding>
+                    </Label>
+                    <TextArea fx:id="descriptionArea" prefRowCount="3" promptText="App description for Intune Company Portal" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+
+                    <Separator GridPane.columnSpan="2" GridPane.rowIndex="4">
+                        <padding><Insets top="10" bottom="10"/></padding>
+                    </Separator>
+
+                    <Label text="Install Command:" GridPane.columnIndex="0" GridPane.rowIndex="5"/>
+                    <TextField fx:id="installCmdField" promptText="msiexec /i &quot;app.msi&quot; /qn" GridPane.columnIndex="1" GridPane.rowIndex="5"/>
+
+                    <Label text="Uninstall Cmd:" GridPane.columnIndex="0" GridPane.rowIndex="6"/>
+                    <TextField fx:id="uninstallCmdField" promptText="msiexec /x {PRODUCT-CODE} /qn" GridPane.columnIndex="1" GridPane.rowIndex="6"/>
+
+                    <Label text="Detection Rule:" GridPane.columnIndex="0" GridPane.rowIndex="7"/>
+                    <TextField fx:id="detectionRuleField" promptText="{ProductID} or Registry Path" GridPane.columnIndex="1" GridPane.rowIndex="7"/>
+
+                    <Label text="Pre-Install Script:" GridPane.columnIndex="0" GridPane.rowIndex="8" GridPane.valignment="TOP">
+                        <padding><Insets top="5"/></padding>
+                    </Label>
+                    <TextArea fx:id="preInstallScriptArea" prefRowCount="3" promptText="Optional: PowerShell entries to run BEFORE installation (e.g. stop-service)" GridPane.columnIndex="1" GridPane.rowIndex="8"/>
+                </GridPane>
+            </VBox>
+
+            <!-- ================= STEP 3: Package & Output ================= -->
+            <VBox fx:id="step3Box" spacing="20" visible="false">
+                <Label text="Package &amp; Output" styleClass="step-title"/>
+                <Label text="Select where to save the generated scripts and the final .intunewin package." styleClass="step-description"/>
+                
+                <VBox styleClass="card" spacing="15">
+                    <Label text="Output Destination"/>
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <TextField fx:id="outputFolderField" prefWidth="400" promptText="Select output folder..." editable="false"/>
+                        <Button text="Browse" onAction="#handleBrowseOutput" styleClass="button"/>
+                    </HBox>
+                </VBox>
+
+                <VBox fx:id="generationProgressBox" styleClass="card" spacing="15" visible="false">
+                    <Label text="Packaging Status" style="-fx-font-weight: bold;"/>
+                    <ProgressBar fx:id="packageProgressBar" prefWidth="500" progress="0.0"/>
+                    <Label fx:id="packageStatusLabel" text="Waiting to start..."/>
+                </VBox>
+            </VBox>
+
+            <!-- ================= STEP 4: Upload & Finish ================= -->
+            <VBox fx:id="step4Box" spacing="20" visible="false">
+                <Label text="Upload &amp; Finish" styleClass="step-title"/>
+                <Label text="Review the logs and optionally upload the completed package directly to Microsoft Intune." styleClass="step-description"/>
+                
+                <VBox styleClass="card" spacing="10" VBox.vgrow="ALWAYS">
+                    <Label text="Console Log" style="-fx-font-weight: bold;"/>
+                    <TextArea fx:id="logArea" VBox.vgrow="ALWAYS" editable="false" styleClass="console" promptText="System logs ready..." wrapText="true"/>
+                    <HBox spacing="10" alignment="CENTER_RIGHT">
+                        <Button text="📂 Open Staging Folder" onAction="#handleOpenStagingFolder" styleClass="button" />
+                        <Button text="🧪 Test Package (Testing Mode)" onAction="#handleTestPackage" styleClass="button, primary-button" />
+                    </HBox>
+                </VBox>
+            </VBox>
+
+        </StackPane>
+    </center>
+
+    <!-- Bottom Action Bar (Next/Back) -->
+    <bottom>
+        <HBox alignment="CENTER_RIGHT" spacing="15" style="-fx-border-color: #e1dfdd; -fx-border-width: 1 0 0 0; -fx-padding: 15 20; -fx-background-color: #ffffff;">
+            <Button fx:id="backButton" text="Back" onAction="#handleBack" styleClass="button" disable="true"/>
+            <Region HBox.hgrow="ALWAYS" />
+            <Button fx:id="nextButton" text="Next" onAction="#handleNext" styleClass="button, primary"/>
+            <Button fx:id="generateButton" text="Generate Package" onAction="#handleGeneratePackage" styleClass="button, primary" visible="false" managed="false"/>
+            <Button fx:id="uploadButton" text="Upload to Intune" onAction="#handleUploadIntune" styleClass="button, success" visible="false" managed="false"/>
+        </HBox>
+    </bottom>
+
+</BorderPane>
