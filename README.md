@@ -2,6 +2,12 @@
 
 A powerful, modern desktop application designed to streamline the process of packaging and uploading Win32 applications to Microsoft Intune. Built with JavaFX and the latest Microsoft Graph SDK, this utility automates the tedious parts of application management.
 
+## 💾 Download
+
+**[Download the latest installer (MSI) here](https://github.com/Thomasrobb5/Intune-Application-Package-Utility/releases/latest)**
+
+*Note: Visit the [Releases](https://github.com/Thomasrobb5/Intune-Application-Package-Utility/releases) page for other versions.*
+
 ## 🚀 Features
 
 - **Automated Script Generation**: Generate high-quality PowerShell installation, uninstallation, and detection scripts using customizable templates.
