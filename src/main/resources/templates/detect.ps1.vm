@@ -8,6 +8,19 @@
 #>
 $ErrorActionPreference = "Stop"
 
+# Logging Infrastructure (Minimal for Detection)
+$LogDir = "C:\Program Files\_MEM\Log"
+if (!(Test-Path $LogDir)) { New-Item -Path $LogDir -ItemType Directory -Force | Out-Null }
+$LogFile = Join-Path $LogDir "${appName}_detection.log"
+
+function Log-Message {
+    param([string]$Message)
+    $TimeStamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $FormattedMessage = "[$TimeStamp] $Message"
+    Write-Host $FormattedMessage
+    $FormattedMessage | Out-File -FilePath $LogFile -Append -Encoding utf8
+}
+
 try {
     # If it is MSI, we can detect via the product code in the registry.
     if ("${sourceType}" -eq "MSI") {
@@ -16,27 +29,26 @@ try {
         $wow64UninstallKey = "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\$productCode"
         
         if ((Test-Path $uninstallKey) -or (Test-Path $wow64UninstallKey)) {
-            Write-Host "Detected MSI product code $productCode"
+            Log-Message "Detected MSI product code $productCode"
             $host.SetShouldExit(0)
             exit 0
         }
     } else {
         # For EXE, detection might require checking the installed path or a specific registry key
         # Default fallback mechanism using the custom detection rule field
-        # The user could input a registry path or a file path
         $rule = "${detectionRule}"
         
         if ($rule -like "HK*") {
             # Basic registry detection
             if (Test-Path $rule) {
-                Write-Host "Detected registry key $rule"
+                Log-Message "Detected registry key $rule"
                 $host.SetShouldExit(0)
                 exit 0
             }
         } elseif ($rule -like "?:\*") {
             # Basic file path detection
             if (Test-Path $rule) {
-                Write-Host "Detected file path $rule"
+                Log-Message "Detected file path $rule"
                 $host.SetShouldExit(0)
                 exit 0
             }
@@ -44,12 +56,12 @@ try {
     }
 
     # If we fall through, the application is not detected.
-    Write-Host "Application not detected."
+    Log-Message "Application not detected."
     # Exit 0 with no stdout tells Intune the app is NOT installed yet.
     $host.SetShouldExit(0)
     exit 0
 } catch {
-    Write-Error $_.Exception.Message
+    Log-Message "DETECTION ERROR: $($_.Exception.Message)"
     # Exit 1 tells Intune there was an error in detection.
     $host.SetShouldExit(1)
     exit 1

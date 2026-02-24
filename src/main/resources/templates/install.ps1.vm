@@ -8,39 +8,66 @@
 #>
 $ErrorActionPreference = "Stop"
 
+# Logging Infrastructure
+$LogDir = "C:\Program Files\_MEM\Log"
+if (!(Test-Path $LogDir)) { New-Item -Path $LogDir -ItemType Directory -Force | Out-Null }
+$LogFile = Join-Path $LogDir "${appName}_install.log"
+
+function Log-Message {
+    param([string]$Message)
+    $TimeStamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $FormattedMessage = "[$TimeStamp] $Message"
+    Write-Host $FormattedMessage
+    $FormattedMessage | Out-File -FilePath $LogFile -Append -Encoding utf8
+}
+
 try {
-    Write-Host "Starting installation for ${appName}"
+    Log-Message "Starting installation for ${appName}"
+    Log-Message "Version: ${version}"
+    Log-Message "Publisher: ${publisher}"
     
     # Pre-install custom script entries
 #if( $preInstallScript && $preInstallScript != "" )
-    Write-Host "Executing pre-install script entries..."
+    Log-Message "Executing pre-install script entries..."
     $preInstallScript
 #end
     
-    # Define the command from the template binding
-    $installCommand = '${installCmd}'
-    
-    Write-Host "Executing: $installCommand"
+    $ExitCode = 1
+    $MaxRetries = 3
+    $RetryCount = 0
+    $WaitSeconds = 10
 
-    # Depending on MSI or EXE, execute the command
-    # Using Start-Process to ensure it blocks and waits
-    if ("${sourceType}" -eq "MSI") {
-        # Split msiexec arguments appropriately
-        $proc = Start-Process -FilePath "msiexec.exe" -ArgumentList "/i `"${sourceFileName}`" /qn" -Wait -PassThru
-        if ($proc.ExitCode -ne 0 -and $proc.ExitCode -ne 3010) {
-            throw "Installation failed with exit code $($proc.ExitCode)"
+    while ($RetryCount -lt $MaxRetries) {
+        $RetryCount++
+        Log-Message "Attempt $RetryCount of $MaxRetries..."
+
+        if ("${sourceType}" -eq "MSI") {
+            $MSILog = Join-Path $LogDir "${appName}_msi.log"
+            Log-Message "Executing MSI install: msiexec /i `"${sourceFileName}`" /qn /L*v `"$MSILog`""
+            $proc = Start-Process -FilePath "msiexec.exe" -ArgumentList "/i `"${sourceFileName}`" /qn /L*v `"$MSILog`"" -Wait -PassThru
+        } else {
+            Log-Message "Executing EXE install: .\${sourceFileName} ${installCmdArgs}"
+            $proc = Start-Process -FilePath ".\${sourceFileName}" -ArgumentList '${installCmdArgs}' -Wait -PassThru
         }
-    } else {
-        # Generic EXE
-        $proc = Start-Process -FilePath ".\${sourceFileName}" -ArgumentList '${installCmdArgs}' -Wait -PassThru
-        if ($proc.ExitCode -ne 0 -and $proc.ExitCode -ne 3010) {
-            throw "Installation failed with exit code $($proc.ExitCode)"
+
+        $ExitCode = $proc.ExitCode
+        Log-Message "Process exited with code: $ExitCode"
+
+        # Success codes: 0, 3010 (Reboot Required)
+        if ($ExitCode -eq 0 -or $ExitCode -eq 3010) {
+            Log-Message "Installation successful (Exit Code: $ExitCode)."
+            exit 0
+        }
+
+        if ($RetryCount -lt $MaxRetries) {
+            Log-Message "Installation failed. Retrying in $WaitSeconds seconds..."
+            Start-Sleep -Seconds $WaitSeconds
         }
     }
 
-    Write-Host "Installation completed successfully."
-    exit 0
+    throw "Installation failed after $MaxRetries attempts with exit code $ExitCode"
+
 } catch {
-    Write-Error $_.Exception.Message
+    Log-Message "CRITICAL ERROR: $($_.Exception.Message)"
     exit 1
 }

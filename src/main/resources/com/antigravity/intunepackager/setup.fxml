@@ -32,7 +32,7 @@
 
         <HBox alignment="CENTER_LEFT" spacing="10">
              <Label text="Intune Content Prep Tool *" prefWidth="150" styleClass="field-label" />
-             <TextField fx:id="toolPathField" promptText="Path to IntuneWinAppUtil.exe" HBox.hgrow="ALWAYS" styleClass="text-input" editable="false" />
+             <TextField fx:id="toolPathField" promptText="Path to IntuneWinAppUtil.exe" HBox.hgrow="ALWAYS" styleClass="text-input" editable="true" />
              <Button text="Browse" onAction="#handleBrowseTool" styleClass="secondary-button" />
         </HBox>
         <HBox alignment="CENTER_RIGHT">

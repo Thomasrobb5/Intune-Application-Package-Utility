@@ -8,32 +8,60 @@
 #>
 $ErrorActionPreference = "Stop"
 
-try {
-    Write-Host "Starting uninstallation for ${appName}"
-    
-    # Define the command from the template binding
-    $uninstallCommand = '${uninstallCmd}'
-    
-    Write-Host "Executing: $uninstallCommand"
+# Logging Infrastructure
+$LogDir = "C:\Program Files\_MEM\Log"
+if (!(Test-Path $LogDir)) { New-Item -Path $LogDir -ItemType Directory -Force | Out-Null }
+$LogFile = Join-Path $LogDir "${appName}_uninstall.log"
 
-    if ("${sourceType}" -eq "MSI") {
-        # Split msiexec arguments appropriately
-        $proc = Start-Process -FilePath "msiexec.exe" -ArgumentList "/x `"${detectionRule}`" /qn" -Wait -PassThru
-        if ($proc.ExitCode -ne 0 -and $proc.ExitCode -ne 3010 -and $proc.ExitCode -ne 1605) {
-            # 1605 = this action is only valid for products that are currently installed (already uninstalled)
-            throw "Uninstallation failed with exit code $($proc.ExitCode)"
+function Log-Message {
+    param([string]$Message)
+    $TimeStamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $FormattedMessage = "[$TimeStamp] $Message"
+    Write-Host $FormattedMessage
+    $FormattedMessage | Out-File -FilePath $LogFile -Append -Encoding utf8
+}
+
+try {
+    Log-Message "Starting uninstallation for ${appName}"
+    Log-Message "Version: ${version}"
+    Log-Message "Publisher: ${publisher}"
+    
+    $ExitCode = 1
+    $MaxRetries = 3
+    $RetryCount = 0
+    $WaitSeconds = 10
+
+    while ($RetryCount -lt $MaxRetries) {
+        $RetryCount++
+        Log-Message "Attempt $RetryCount of $MaxRetries..."
+
+        if ("${sourceType}" -eq "MSI") {
+            $MSILog = Join-Path $LogDir "${appName}_msi_uninstall.log"
+            Log-Message "Executing MSI uninstall: msiexec /x `"${detectionRule}`" /qn /L*v `"$MSILog`""
+            $proc = Start-Process -FilePath "msiexec.exe" -ArgumentList "/x `"${detectionRule}`" /qn /L*v `"$MSILog`"" -Wait -PassThru
+        } else {
+            Log-Message "Executing EXE uninstall: .\${sourceFileName} ${uninstallCmdArgs}"
+            $proc = Start-Process -FilePath ".\${sourceFileName}" -ArgumentList '${uninstallCmdArgs}' -Wait -PassThru
         }
-    } else {
-        # Generic EXE
-        $proc = Start-Process -FilePath ".\${sourceFileName}" -ArgumentList '${uninstallCmdArgs}' -Wait -PassThru
-        if ($proc.ExitCode -ne 0 -and $proc.ExitCode -ne 3010) {
-            throw "Uninstallation failed with exit code $($proc.ExitCode)"
+
+        $ExitCode = $proc.ExitCode
+        Log-Message "Process exited with code: $ExitCode"
+
+        # Success codes: 0, 3010, 1605 (already uninstalled)
+        if ($ExitCode -eq 0 -or $ExitCode -eq 3010 -or $ExitCode -eq 1605) {
+            Log-Message "Uninstallation successful (Exit Code: $ExitCode)."
+            exit 0
+        }
+
+        if ($RetryCount -lt $MaxRetries) {
+            Log-Message "Uninstallation failed. Retrying in $WaitSeconds seconds..."
+            Start-Sleep -Seconds $WaitSeconds
         }
     }
 
-    Write-Host "Uninstallation completed successfully."
-    exit 0
+    throw "Uninstallation failed after $MaxRetries attempts with exit code $ExitCode"
+
 } catch {
-    Write-Error $_.Exception.Message
+    Log-Message "CRITICAL ERROR: $($_.Exception.Message)"
     exit 1
 }
