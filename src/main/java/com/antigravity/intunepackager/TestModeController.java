@@ -88,7 +88,8 @@ public class TestModeController {
                         + runnerFile.getAbsolutePath() + "\"' -Verb RunAs -Wait";
 
                 logToConsole("Executing: " + psCommand);
-                ProcessBuilder pb = new ProcessBuilder("powershell.exe", "-Command", psCommand);
+                ProcessBuilder pb = new ProcessBuilder("powershell.exe", "-ExecutionPolicy", "Bypass", "-Command",
+                        psCommand);
                 pb.directory(stagingDirectory);
                 Process process = pb.start();
 
